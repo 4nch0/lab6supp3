@@ -8,7 +8,7 @@ const firebaseConfig = {
     authDomain: "lab66act.firebaseapp.com",
     databaseURL: "https://lab66act-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "lab66act",
-    storageBucket: "lab66act.firebasestorage.app",
+    storageBucket: "lab66act.appspot.com", // Corrected storage bucket URL
     messagingSenderId: "913760998317",
     appId: "1:913760998317:web:0feebc571bd72e2f300724",
     measurementId: "G-KXKDR6MGSF"
@@ -16,6 +16,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app); // Ensure this is correct
+const database = getDatabase(app); // Initialize the Realtime Database
 
 export { database }; // Export the database instance
