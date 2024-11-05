@@ -1,12 +1,12 @@
 <template>
   <div id="app">
     <h1>Welcome to the Sensor Dashboard</h1>
-    <SensorData />
+    <sensorData />
   </div>
 </template>
 
 <script>
-import sensorData from './components/sensorData.vue'
+import sensorData from './components/sensorData.vue'; // Ensure the casing matches the filename
 
 export default {
   name: 'App',

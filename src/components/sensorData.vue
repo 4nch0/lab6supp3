@@ -1,38 +1,48 @@
 <template>
     <div>
-      <h1>Sensor Data</h1>
-      <ul>
-        <li v-for="(data, index) in sensorData" :key="index">
-          Temperature: {{ data.temperature }} °C, Humidity: {{ data.humidity }}%
-        </li>
-      </ul>
+      <h2>Sensor Data</h2>
+      <sensor-chart :data="sensorData" />
     </div>
   </template>
   
   <script>
-  import { ref, onValue } from "firebase/database";
-  import { db } from "@/firebaseConfig"; // Adjust path based on your actual Firebase config file
+  import { ref, onMounted } from 'vue';
+  import { database } from '../firebaseConfig.js'; // Adjust the path based on your structure
+  import { ref as firebaseRef, onValue } from 'firebase/database';
+  import SensorChart from './sensorChart.vue';
   
   export default {
-    name: "SensorData",
-    data() {
-      return {
-        sensorData: [],
-      };
+    components: {
+      SensorChart
     },
-    created() {
-      // Define reference to 'sensorData' in your Firebase Realtime Database
-      const dataRef = ref(db, 'sensorData');
+    setup() {
+      const sensorData = ref([]);
   
-      // Listen for changes to 'sensorData' and update component's data
-      onValue(dataRef, (snapshot) => {
-        const dataArray = [];
-        snapshot.forEach((childSnapshot) => {
-          dataArray.push(childSnapshot.val());
+      const fetchSensorData = () => {
+        const dataRef = firebaseRef(database, 'sensorData'); // Adjust this path as needed
+        onValue(dataRef, (snapshot) => {
+          const data = snapshot.val();
+          if (data) {
+            sensorData.value = Object.entries(data).map(([key, value]) => ({
+              key,
+              ...value,
+            }));
+          }
         });
-        this.sensorData = dataArray;
+      };
+  
+      onMounted(() => {
+        fetchSensorData();
       });
+  
+      return {
+        sensorData,
+      };
     },
   };
   </script>
+  
+  <style scoped>
+  /* Add your styles here */
+  </style>
   
