@@ -1,8 +1,8 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
-import { getDatabase } from "firebase/database";
+import { getDatabase, ref, set, get, update, remove, push, child } from "firebase/database";
 
-// Your web app's Firebase configuration
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyD0mIlsee1xS19OPmjYemLAiAHFUYtKqHU",
     authDomain: "lab66act.firebaseapp.com",
@@ -16,6 +16,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app); // Ensure this is correct
+const db = getDatabase(app);
 
-export { database }; // Export the database instance
+export { db, ref, set, get, update, remove, push, child };
