@@ -1,5 +1,5 @@
 import { db, ref, set, get, update, remove, push } from '@/firebaseConfig';
-import { reactive, toRefs } from 'vue';  // Add this import
+import { reactive, toRefs } from 'vue';
 
 export const useSensorStore = () => {
   const state = reactive({
@@ -7,17 +7,16 @@ export const useSensorStore = () => {
     error: null,
   });
 
-// Load data from localStorage or Firebase
-const loadData = async () => {
-  const storedData = localStorage.getItem('sensorData');
-  if (storedData) {
-    state.sensorData = JSON.parse(storedData);
-  } else {
-    await fetchSensorData();
-    localStorage.setItem('sensorData', JSON.stringify(state.sensorData)); // Add this line
-  }
-};
-
+  // Function to load data from cache or Firebase
+  const loadData = async () => {
+    const cachedData = await getFromCache();
+    if (cachedData) {
+      state.sensorData = cachedData;
+    } else {
+      await fetchSensorData();
+      await saveToCache(state.sensorData);
+    }
+  };
 
   // Fetch all sensor data from Firebase
   const fetchSensorData = async () => {
@@ -30,7 +29,6 @@ const loadData = async () => {
           id: key,
           ...value,
         }));
-        localStorage.setItem('sensorData', JSON.stringify(state.sensorData));
         state.error = null;
       } else {
         state.sensorData = [];
@@ -42,6 +40,17 @@ const loadData = async () => {
     }
   };
 
+  // Function to retrieve data from the cache
+  const getFromCache = async () => {
+    const cachedData = localStorage.getItem('sensorData');
+    return cachedData ? JSON.parse(cachedData) : null;
+  };
+
+  // Function to save data to the cache
+  const saveToCache = async (data) => {
+    localStorage.setItem('sensorData', JSON.stringify(data));
+  };
+
   // Create new sensor data
   const createSensorData = async (newSensor) => {
     const sensorRef = ref(db, 'sensorData');
@@ -49,7 +58,7 @@ const loadData = async () => {
       const newSensorRef = push(sensorRef);
       await set(newSensorRef, newSensor);
       state.sensorData.push({ id: newSensorRef.key, ...newSensor });
-      localStorage.setItem('sensorData', JSON.stringify(state.sensorData));
+      await saveToCache(state.sensorData);
     } catch (err) {
       state.error = 'Error creating sensor data: ' + err.message;
       console.error(state.error);
@@ -64,7 +73,7 @@ const loadData = async () => {
       const index = state.sensorData.findIndex(sensor => sensor.id === id);
       if (index !== -1) {
         state.sensorData[index] = { ...state.sensorData[index], ...updatedData };
-        localStorage.setItem('sensorData', JSON.stringify(state.sensorData));
+        await saveToCache(state.sensorData);
       }
     } catch (err) {
       state.error = 'Error updating sensor data: ' + err.message;
@@ -78,7 +87,7 @@ const loadData = async () => {
     try {
       await remove(sensorRef);
       state.sensorData = state.sensorData.filter(sensor => sensor.id !== id);
-      localStorage.setItem('sensorData', JSON.stringify(state.sensorData));
+      await saveToCache(state.sensorData);
     } catch (err) {
       state.error = 'Error deleting sensor data: ' + err.message;
       console.error(state.error);
@@ -94,6 +103,8 @@ const loadData = async () => {
     createSensorData,
     updateSensorData,
     deleteSensorData,
-    loadData,  // Add this line
-  };  
+    loadData,
+    getFromCache,  // Added for potential external calls if needed
+    saveToCache,   // Added for potential external calls if needed
+  };
 };

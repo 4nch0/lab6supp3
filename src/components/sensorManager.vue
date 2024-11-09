@@ -2,26 +2,34 @@
   <div class="sensor-manager">
     <h2 class="heading">Manage Sensor Data</h2>
     
+    <!-- Form to add a new sensor -->
     <form @submit.prevent="addSensor" class="sensor-form">
       <input 
         v-model="newSensor.humidity" 
-        placeholder="Humidity" 
+        placeholder="Humidity (%)" 
         required 
         class="sensor-input" 
       />
       <input 
         v-model="newSensor.temperature" 
-        placeholder="Temperature" 
+        placeholder="Temperature (°C)" 
         required 
         class="sensor-input" 
       />
       <button type="submit" class="submit-btn">Add Sensor</button>
     </form>
 
+    <!-- Buttons to handle cache operations -->
+    <div class="cache-buttons">
+      <button @click="loadCache" class="load-btn">Load from Cache</button>
+      <button @click="clearCache" class="clear-btn">Clear Cache</button>
+    </div>
+
+    <!-- Sensor list -->
     <ul class="sensor-list">
       <li v-for="sensor in sensorData" :key="sensor.id" class="sensor-item">
         <span class="sensor-details">
-          Humidity: {{ sensor.humidity }} - Temperature: {{ sensor.temperature }}
+          Humidity: {{ sensor.humidity }}% - Temperature: {{ sensor.temperature }}°C
         </span>
         <div class="button-group">
           <button @click="editSensor(sensor.id)" class="edit-btn">Edit</button>
@@ -30,6 +38,7 @@
       </li>
     </ul>
 
+    <!-- Feedback messages -->
     <p v-if="feedbackMessage" :class="feedbackType" class="feedback-message">{{ feedbackMessage }}</p>
   </div>
 </template>
@@ -46,12 +55,14 @@ export default {
       createSensorData,
       updateSensorData,
       deleteSensorData,
+      loadData,  // Importing loadData from your store
     } = useSensorStore();
     
     const newSensor = ref({ humidity: '', temperature: '' });
     const feedbackMessage = ref('');
     const feedbackType = ref('');
 
+    // Add a new sensor
     const addSensor = async () => {
       try {
         await createSensorData({
@@ -61,23 +72,27 @@ export default {
         feedbackMessage.value = "Sensor added successfully!";
         feedbackType.value = "success";
         clearInputs();
+        await fetchSensorData();  // Reload sensor data after adding
       } catch (err) {
         feedbackMessage.value = `Error adding sensor: ${err.message}`;
         feedbackType.value = "error";
       }
     };
 
+    // Remove a sensor
     const removeSensor = async (id) => {
       try {
         await deleteSensorData(id);
         feedbackMessage.value = "Sensor deleted successfully!";
         feedbackType.value = "info";
+        await fetchSensorData();  // Reload sensor data after deleting
       } catch (err) {
         feedbackMessage.value = `Error deleting sensor: ${err.message}`;
         feedbackType.value = "error";
       }
     };
 
+    // Edit a sensor
     const editSensor = async (id) => {
       const updatedData = {
         humidity: prompt('Enter new humidity:', ''),
@@ -88,6 +103,7 @@ export default {
           await updateSensorData(id, updatedData);
           feedbackMessage.value = "Sensor updated successfully!";
           feedbackType.value = "success";
+          await fetchSensorData();  // Reload sensor data after editing
         } catch (err) {
           feedbackMessage.value = `Error updating sensor: ${err.message}`;
           feedbackType.value = "error";
@@ -98,9 +114,23 @@ export default {
       }
     };
 
+    // Clear the form inputs
     const clearInputs = () => {
       newSensor.value.humidity = '';
       newSensor.value.temperature = '';
+    };
+
+    // Handle loading data from cache (localStorage)
+    const loadCache = () => {
+      loadData(); // Load data from localStorage if available
+    };
+
+    // Clear the cache (localStorage)
+    const clearCache = () => {
+      localStorage.removeItem('sensorData');
+      feedbackMessage.value = "Cache cleared!";
+      feedbackType.value = "info";
+      sensorData.value = [];  // Clear sensor data after cache is cleared
     };
 
     onMounted(() => {
@@ -115,6 +145,8 @@ export default {
       editSensor,
       feedbackMessage,
       feedbackType,
+      loadCache,
+      clearCache,
     };
   },
 };
@@ -124,19 +156,21 @@ export default {
 /* General Layout */
 .sensor-manager {
   font-family: 'Roboto', sans-serif;
-  padding: 2rem;
-  background: #f4f4f9;
-  border-radius: 8px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  padding: 3rem;
+  background: linear-gradient(135deg, #9CCD62, #3C3D42);
+  border-radius: 15px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
   max-width: 600px;
-  margin: 0 auto;
+  margin: 50px auto;
+  color: white;
 }
 
 .heading {
-  font-size: 2rem;
-  color: #3C3D42;
+  font-size: 2.5rem;
   text-align: center;
   margin-bottom: 1.5rem;
+  font-weight: 700;
+  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Form Styling */
@@ -148,22 +182,25 @@ export default {
 }
 
 .sensor-input {
-  padding: 0.8rem;
-  font-size: 1rem;
-  border: 2px solid #ddd;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border: 2px solid #f1f1f1;
   border-radius: 8px;
-  transition: border-color 0.3s ease;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transition: all 0.3s ease-in-out;
 }
 
 .sensor-input:focus {
   border-color: #9CCD62;
   outline: none;
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Button Styling */
 .submit-btn {
   padding: 1rem;
-  background-color: #9CCD62;
+  background-color: #F8C471;
   color: white;
   border: none;
   border-radius: 8px;
@@ -173,41 +210,36 @@ export default {
 }
 
 .submit-btn:hover {
-  background-color: #82b75e;
+  background-color: #E67E22;
 }
 
-.button-group {
+/* Cache Buttons */
+.cache-buttons {
   display: flex;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.edit-btn,
-.delete-btn {
-  padding: 0.6rem 1rem;
-  font-size: 0.9rem;
-  border-radius: 6px;
+.load-btn, .clear-btn {
+  padding: 1rem;
+  background-color: #E67E22;
+  color: white;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.edit-btn {
-  background-color: #f1a7a7;
+.load-btn:hover {
+  background-color: #D35400;
 }
 
-.edit-btn:hover {
-  background-color: #e87d7d;
+.clear-btn:hover {
+  background-color: #F39C12;
 }
 
-.delete-btn {
-  background-color: #f4a261;
-}
-
-.delete-btn:hover {
-  background-color: #e77b3d;
-}
-
-/* List Styling */
+/* Sensor Item Styling */
 .sensor-list {
   list-style: none;
   padding: 0;
@@ -215,51 +247,81 @@ export default {
 }
 
 .sensor-item {
-  background-color: #fff;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   margin-bottom: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.sensor-item:hover {
+  transform: translateY(-5px);
 }
 
 .sensor-details {
-  font-size: 1rem;
-  color: #3C3D42;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
+/* Button Group */
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.edit-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #2980b9;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Feedback Messages */
 .feedback-message {
-  margin-top: 1rem;
-  padding: 0.8rem;
-  text-align: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
   font-weight: bold;
+  text-align: center;
+  transition: opacity 0.3s ease;
 }
 
 .success {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: #27ae60;
+  color: white;
 }
 
 .info {
-  background-color: #d1ecf1;
-  color: #0c5460;
+  background-color: #1abc9c;
+  color: white;
 }
 
 .error {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-@media (max-width: 600px) {
-  .sensor-manager {
-    padding: 1rem;
-  }
-
-  .submit-btn {
-    font-size: 1rem;
-  }
+  background-color: #e74c3c;
+  color: white;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <h1>Welcome to the Sensor Dashboard</h1>+
+    <h1>Welcome to the Sensor Dashboard</h1>
     
     <sensorManager />
   </div>
