@@ -7,15 +7,17 @@ export const useSensorStore = () => {
     error: null,
   });
 
-  // Load data from localStorage or Firebase
-  const loadData = async () => {
-    const storedData = localStorage.getItem('sensorData');
-    if (storedData) {
-      state.sensorData = JSON.parse(storedData);
-    } else {
-      await fetchSensorData();
-    }
-  };
+// Load data from localStorage or Firebase
+const loadData = async () => {
+  const storedData = localStorage.getItem('sensorData');
+  if (storedData) {
+    state.sensorData = JSON.parse(storedData);
+  } else {
+    await fetchSensorData();
+    localStorage.setItem('sensorData', JSON.stringify(state.sensorData)); // Add this line
+  }
+};
+
 
   // Fetch all sensor data from Firebase
   const fetchSensorData = async () => {
@@ -92,5 +94,6 @@ export const useSensorStore = () => {
     createSensorData,
     updateSensorData,
     deleteSensorData,
-  };
+    loadData,  // Add this line
+  };  
 };
